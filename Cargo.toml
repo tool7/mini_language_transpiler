@@ -1,0 +1,10 @@
+[package]
+name = "mini_language_transpiler"
+version = "0.1.0"
+authors = ["mroje <marko.roje@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+docopt = "*"
+regex = "*"
+serde = "*"
