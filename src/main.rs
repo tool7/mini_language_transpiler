@@ -34,7 +34,7 @@ fn main() {
         else { Mode::Transpiler };
 
     let config = DriverConfig {
-        display_tokens: true,
+        display_tokens: false,
         display_ast: true
     };
 
