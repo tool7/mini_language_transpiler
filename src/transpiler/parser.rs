@@ -55,7 +55,7 @@ enum PartParsingResult<T> {
     Bad(String)
 }
 
-fn error<T>(message : &str) -> PartParsingResult<T> {
+fn error<T>(message: &str) -> PartParsingResult<T> {
     Bad(message.to_string())
 }
 
@@ -73,7 +73,7 @@ pub fn default_parser_settings() -> ParserSettings {
     ParserSettings{operator_precedence: operator_precedence}
 }
 
-pub fn parse(tokens : &[Token], parsed_tree : &[ASTNode], settings : &mut ParserSettings) -> ParsingResult
+pub fn parse(tokens: &[Token], parsed_tree: &[ASTNode], settings: &mut ParserSettings) -> ParsingResult
 {
     let mut rest = tokens.to_vec();
     // we read tokens from the end of the vector
@@ -160,7 +160,7 @@ macro_rules! expect_token (
     )
 );
 
-fn parse_function(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<ASTNode> {
+fn parse_function(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<ASTNode> {
     // eat Def token
     tokens.pop();
     let mut parsed_tokens = vec!(Def);
@@ -170,7 +170,7 @@ fn parse_function(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> P
     Good(FunctionNode(Function{prototype: prototype, body: body}), parsed_tokens)
 }
 
-fn parse_prototype(tokens : &mut Vec<Token>, _settings : &mut ParserSettings) -> PartParsingResult<Prototype> {
+fn parse_prototype(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> PartParsingResult<Prototype> {
     let mut parsed_tokens = Vec::new();
 
     let name = expect_token!([
@@ -193,7 +193,7 @@ fn parse_prototype(tokens : &mut Vec<Token>, _settings : &mut ParserSettings) ->
     Good(Prototype{name: name, args: args}, parsed_tokens)
 }
 
-fn parse_expression(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<ASTNode> {
+fn parse_expression(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<ASTNode> {
     let mut parsed_tokens = Vec::new();
     let expression = parse_try!(parse_expr, tokens, settings, parsed_tokens);
     let prototype = Prototype{name: "".to_string(), args: vec![]};
@@ -201,7 +201,7 @@ fn parse_expression(tokens : &mut Vec<Token>, settings : &mut ParserSettings) ->
     Good(FunctionNode(lambda), parsed_tokens)
 }
 
-fn parse_primary_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_primary_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     match tokens.last() {
         Some(&Ident(_)) => parse_ident_expr(tokens, settings),
         Some(&Number(_)) => parse_literal_expr(tokens, settings),
@@ -213,7 +213,7 @@ fn parse_primary_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) 
     }
 }
 
-fn parse_ident_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_ident_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     let mut parsed_tokens = Vec::new();
 
     let name = expect_token!(
@@ -239,7 +239,7 @@ fn parse_ident_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) ->
     Good(CallExpr(name, args), parsed_tokens)
 }
 
-fn parse_literal_expr(tokens : &mut Vec<Token>, _settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_literal_expr(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     let mut parsed_tokens = Vec::new();
 
     let value = expect_token!(
@@ -249,7 +249,7 @@ fn parse_literal_expr(tokens : &mut Vec<Token>, _settings : &mut ParserSettings)
     Good(LiteralExpr(value), parsed_tokens)
 }
 
-fn parse_parenthesis_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_parenthesis_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     // eat the opening parenthesis
     tokens.pop();
     let mut parsed_tokens = vec![OpeningParenthesis];
@@ -263,14 +263,14 @@ fn parse_parenthesis_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettin
     Good(expr, parsed_tokens)
 }
 
-fn parse_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     let mut parsed_tokens = Vec::new();
     let lhs = parse_try!(parse_primary_expr, tokens, settings, parsed_tokens);
     let expr = parse_try!(parse_binary_expr, tokens, settings, parsed_tokens, 0, &lhs);
     Good(expr, parsed_tokens)
 }
 
-fn parse_binary_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings, expr_precedence : i32, lhs : &Expression) -> PartParsingResult<Expression> {
+fn parse_binary_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings, expr_precedence: i32, lhs: &Expression) -> PartParsingResult<Expression> {
     // start with LHS value
     let mut result = lhs.clone();
     let mut parsed_tokens = Vec::new();
@@ -316,7 +316,7 @@ fn parse_binary_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings, e
     Good(result, parsed_tokens)
 }
 
-fn parse_conditional_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_conditional_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     tokens.pop();
     let mut parsed_tokens = vec![If];
     let cond_expr = parse_try!(parse_expr, tokens, settings, parsed_tokens);
@@ -334,7 +334,7 @@ fn parse_conditional_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettin
     Good(ConditionalExpr{cond_expr: Box::new(cond_expr), then_expr: Box::new(then_expr), else_expr: Box::new(else_expr)}, parsed_tokens)
 }
 
-fn parse_loop_expr(tokens : &mut Vec<Token>, settings : &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_loop_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     tokens.pop();
     let mut parsed_tokens = vec![For];
     let var_name = expect_token!(
