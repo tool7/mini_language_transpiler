@@ -35,7 +35,7 @@ fn main() {
 
     let config = DriverConfig {
         display_tokens: false,
-        display_ast: true
+        display_ast: false
     };
 
     driver::run(mode, config);

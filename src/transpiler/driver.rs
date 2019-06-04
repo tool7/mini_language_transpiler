@@ -4,6 +4,7 @@ use std::fs::File;
 
 use crate::transpiler::lexer::*;
 use crate::transpiler::parser::*;
+use crate::transpiler::translator::*;
 
 pub use self::Mode::{
     Interpreter,
@@ -86,7 +87,6 @@ fn run_interpreter(display_settings: DriverConfig) -> Result<(), Error> {
 
 fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
     let source_file_path: &'static str = "source_files/test1.txt";
-    let mut output_file_path = File::create("output/test1.rs");
 
     let input = File::open(source_file_path)?;
     let buffered = BufReader::new(input);
@@ -119,6 +119,11 @@ fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
     if display_settings.display_ast {
         println!("AST: {:?}", ast);
     }
+
+    // Translating from mini language to Rust source code
+    translate(&ast);
+
+    // TODO: Build and run transpiled Rust source code
 
     Ok(())
 }
