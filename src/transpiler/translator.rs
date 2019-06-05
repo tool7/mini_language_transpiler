@@ -2,7 +2,7 @@ use crate::transpiler::parser::*;
 
 macro_rules! function_definition {
     ($name:expr, $body:expr, $args:expr) => (
-        format!("fn {}({}) {{\n{:?}\n}}", $name, $args, $body);
+        format!("fn {}({}) {{\n{}\n}}", $name, $args, $body);
     )
 }
 
@@ -13,30 +13,22 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
     for node in ast {
         let FunctionNode(function) = node;
         
-
         // println!("{:?}", function);
 
+        let mut translated_expression: String = translate_expression(&function.body);
 
         // Not function definition
         if function.prototype.name == "" {
-            let mut translated_expr_string: String = match &function.body {
-                LiteralExpr(expr) => format!("{};", expr.to_string()),
-                VariableExpr(expr) => format!("{};", String::from(expr.as_str())),
-                BinaryExpr(operator, lhs, rhs) => translate_binary_expression(operator, lhs, rhs),
-                ConditionalExpr{ cond_expr, then_expr, else_expr } => translate_conditional_expression(),
-                LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => translate_loop_expression(),
-                CallExpr(name, args) => translate_call_expression()
-            };
-
-            translated_expr_string.push_str("\n");
-            translated_expressions.push_str(&translated_expr_string);
+            translated_expression.push(';');
+            translated_expression.push_str("\n");
+            translated_expressions.push_str(&translated_expression);
         }
         // Function definition
         else {
-            let mut function_definition_string = function_definition!(function.prototype.name, function.body, function.prototype.args.join(", "));
+            let mut translated_function_definition = function_definition!(function.prototype.name, translated_expression, function.prototype.args.join(", "));
 
-            function_definition_string.push_str("\n");
-            translated_function_definitions.push_str(&function_definition_string);
+            translated_function_definition.push_str("\n");
+            translated_function_definitions.push_str(&translated_function_definition);
         }
     }
 
@@ -46,28 +38,55 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
         translated_expressions
     );
 
+    // println!("{}", rust_source_code);
+
     Ok(rust_source_code)
 }
 
+fn translate_expression(expr: &Expression) -> String {
+    let translated_expr = match expr {
+        LiteralExpr(expr) => translate_literal_expression(expr),
+        VariableExpr(expr) => translate_variable_expression(expr),
+        BinaryExpr(operator, lhs, rhs) => translate_binary_expression(operator, lhs, rhs),
+        ConditionalExpr{ cond_expr, then_expr, else_expr } => translate_conditional_expression(),
+        LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => translate_loop_expression(),
+        CallExpr(name, args) => translate_call_expression(name, args)
+    };
+
+    translated_expr
+}
+
+fn translate_literal_expression(value: &f64) -> String {
+    format!("{:.*}", 2, value)
+}
+
+fn translate_variable_expression(name: &String) -> String {
+    format!("{}", String::from(name.as_str()))
+}
+
 fn translate_binary_expression(operator: &String, lhs: &Expression, rhs: &Expression) -> String {
-    // println!("{:?} {:?} {:?}", operator, lhs, rhs);
+    let translated_lhs: String = translate_expression(lhs);
+    let translated_rhs: String = translate_expression(rhs);
 
-
-
-    format!("{};", "[binary expression]")
+    format!("({} {} {})", translated_lhs, operator, translated_rhs)
 }
 
 fn translate_conditional_expression() -> String {
     // TODO:
-    format!("{};", "[conditional expression]")
+    format!("{}", "[conditional expression]")
 }
 
 fn translate_loop_expression() -> String {
     // TODO:
-    format!("{};", "[loop expression]")
+    format!("{}", "[loop expression]")
 }
 
-fn translate_call_expression() -> String {
-    // TODO:
-    format!("{};", "[call expression]")
+fn translate_call_expression(function_name: &String, args: &Vec<Expression>) -> String {
+    let mut translated_args = Vec::new();
+    for arg in args {
+        let translated_arg = translate_expression(arg);
+        translated_args.push(translated_arg);
+    }
+
+    format!("{}({})", function_name, translated_args.join(", "))
 }
