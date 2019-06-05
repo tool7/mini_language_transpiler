@@ -87,6 +87,7 @@ fn run_interpreter(display_settings: DriverConfig) -> Result<(), Error> {
 
 fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
     let source_file_path: &'static str = "source_files/test1.txt";
+    let mut output_file = File::create("output/test1.rs")?;
 
     let input = File::open(source_file_path)?;
     let buffered = BufReader::new(input);
@@ -121,9 +122,15 @@ fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
     }
 
     // Translating from mini language to Rust source code
-    translate(&ast);
+    let rust_source_code: String = match translate(&ast) {
+        Ok(source_code) => source_code,
+        Err(message) => panic!("{:?}", message)
+    };
 
-    // TODO: Build and run transpiled Rust source code
+    // Storing translated Rust source code to output file
+    output_file.write_all(rust_source_code.as_bytes())?;
+
+    // TODO: Build and run
 
     Ok(())
 }
