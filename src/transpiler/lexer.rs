@@ -9,6 +9,7 @@ pub use self::Token::{
     Else,
     For,
     In,
+    Var,
     Delimiter,
     OpeningParenthesis,
     ClosingParenthesis,
@@ -26,6 +27,7 @@ pub enum Token {
     Else,
     For,
     In,
+    Var,
     Delimiter,      // ';' character
     OpeningParenthesis,
     ClosingParenthesis,
@@ -59,6 +61,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                 "else" => Else,
                 "for" => For,
                 "in" => In,
+                "var" => Var,
                 ident => Ident(ident.to_string())
             }
         } else if cap.name("number").is_some() {

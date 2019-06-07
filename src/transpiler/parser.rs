@@ -12,6 +12,7 @@ pub use self::Expression::{
     BinaryExpr,
     ConditionalExpr,
     LoopExpr,
+    VarInitExpr,
     CallExpr
 };
 
@@ -45,6 +46,7 @@ pub enum Expression {
     BinaryExpr(String, Box<Expression>, Box<Expression>),
     ConditionalExpr{cond_expr: Box<Expression>, then_expr: Box<Expression>, else_expr: Box<Expression>},
     LoopExpr{var_name: String, start_expr: Box<Expression>, end_expr: Box<Expression>, step_expr: Box<Expression>, body_expr: Box<Expression>},
+    VarInitExpr(String, Box<Expression>),
     CallExpr(String, Vec<Expression>)
 }
 pub type ParsingResult = Result<(Vec<ASTNode>, Vec<Token>), String>;
@@ -65,6 +67,7 @@ pub struct ParserSettings {
 
 pub fn default_parser_settings() -> ParserSettings {
     let mut operator_precedence = HashMap::new();
+    operator_precedence.insert("=".to_string(), 2);
     operator_precedence.insert("<".to_string(), 10);
     operator_precedence.insert("+".to_string(), 20);
     operator_precedence.insert("-".to_string(), 20);
@@ -207,6 +210,7 @@ fn parse_primary_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) ->
         Some(&Number(_)) => parse_literal_expr(tokens, settings),
         Some(&If) => parse_conditional_expr(tokens, settings),
         Some(&For) => parse_loop_expr(tokens, settings),
+        Some(&Var) => parse_var_init_expr(tokens, settings),
         Some(&OpeningParenthesis) => parse_parenthesis_expr(tokens, settings),
         None => return NotComplete,
         _ => error("unknow token when expecting an expression")
@@ -369,4 +373,25 @@ fn parse_loop_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> Pa
     let body_expr = parse_try!(parse_expr, tokens, settings, parsed_tokens);
 
     Good(LoopExpr{var_name: var_name, start_expr: Box::new(start_expr), end_expr: Box::new(end_expr), step_expr: Box::new(step_expr), body_expr: Box::new(body_expr)}, parsed_tokens)
+}
+
+fn parse_var_init_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
+    tokens.pop();
+    let mut parsed_tokens = vec![Var];
+
+    let var_name = expect_token!(
+        [Ident(name), Ident(name.clone()), name] <= tokens,
+        parsed_tokens, "expected identifier list after var");
+
+    let init_expr = expect_token!(
+        [Operator(op), Operator(op.clone()), {
+            if op.as_str() != "=" {
+                return error("expected '=' in variable initialization")
+            }
+            parse_try!(parse_expr, tokens, settings, parsed_tokens)
+        }]
+        else {LiteralExpr(0.0)}
+        <= tokens, parsed_tokens);
+    
+    Good(VarInitExpr(var_name, Box::new(init_expr)), parsed_tokens)
 }

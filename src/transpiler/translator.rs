@@ -25,7 +25,10 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
         }
         // Function definition
         else {
-            let mut translated_function_definition = function_definition!(function.prototype.name, translated_expression, function.prototype.args.join(", "));
+            let mut function_arguments_string = function.prototype.args.join(": f64, ");
+            function_arguments_string.push_str(": f64");
+            
+            let mut translated_function_definition = function_definition!(function.prototype.name, translated_expression, function_arguments_string);
 
             translated_function_definition.push_str("\n");
             translated_function_definitions.push_str(&translated_function_definition);
@@ -50,6 +53,7 @@ fn translate_expression(expr: &Expression) -> String {
         BinaryExpr(operator, lhs, rhs) => translate_binary_expression(operator, lhs, rhs),
         ConditionalExpr{ cond_expr, then_expr, else_expr } => translate_conditional_expression(),
         LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => translate_loop_expression(),
+        VarInitExpr(name, value) => translate_var_init_expression(name, value),
         CallExpr(name, args) => translate_call_expression(name, args)
     };
 
@@ -79,6 +83,12 @@ fn translate_conditional_expression() -> String {
 fn translate_loop_expression() -> String {
     // TODO:
     format!("{}", "[loop expression]")
+}
+
+fn translate_var_init_expression(name: &String, value: &Expression) -> String {
+    let translated_value: String = translate_expression(value);
+
+    format!("let {} = {}", name, translated_value)
 }
 
 fn translate_call_expression(function_name: &String, args: &Vec<Expression>) -> String {

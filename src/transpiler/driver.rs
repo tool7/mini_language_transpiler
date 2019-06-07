@@ -1,6 +1,7 @@
 use std::io;
 use std::io::{ Write, BufReader, BufRead, Error };
 use std::fs::File;
+use std::process::Command;
 
 use crate::transpiler::lexer::*;
 use crate::transpiler::parser::*;
@@ -127,10 +128,14 @@ fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
         Err(message) => panic!("{:?}", message)
     };
 
-    // Storing translated Rust source code to output file
+    // Storing transpiled Rust source code to output file
     output_file.write_all(rust_source_code.as_bytes())?;
 
-    // TODO: Build and run
+    // Building and running transpiled Rust source code
+    Command::new("rustc")
+        .arg("output/test1.rs")
+        .spawn()
+        .expect("Command failed.");
 
     Ok(())
 }
