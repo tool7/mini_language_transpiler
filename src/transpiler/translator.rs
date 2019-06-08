@@ -1,8 +1,8 @@
 use crate::transpiler::parser::*;
 
 macro_rules! function_definition {
-    ($name:expr, $body:expr, $args:expr) => (
-        format!("fn {}({}) {{\n{}\n}}", $name, $args, $body);
+    ($name:expr, $args:expr, $return_type:expr, $body:expr) => (
+        format!("fn {}({}) -> {} {{\n{}\n}}", $name, $args, $return_type, $body);
     )
 }
 
@@ -25,12 +25,7 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
         }
         // Function definition
         else {
-            let mut function_arguments_string = function.prototype.args.join(": f64, ");
-            function_arguments_string.push_str(": f64");
-            
-            let mut translated_function_definition = function_definition!(function.prototype.name, translated_expression, function_arguments_string);
-
-            translated_function_definition.push_str("\n");
+            let translated_function_definition = translate_function_definition(&function.prototype, &translated_expression);
             translated_function_definitions.push_str(&translated_function_definition);
         }
     }
@@ -44,6 +39,26 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
     // println!("{}", rust_source_code);
 
     Ok(rust_source_code)
+}
+
+fn translate_function_definition(prototype: &Prototype, translated_body: &String) -> String {
+    let mut function_arguments_string = String::new();
+
+    if prototype.args.len() > 0 {
+        function_arguments_string = prototype.args.join(": f64, ");
+        function_arguments_string.push_str(": f64");
+    }
+
+    let return_type_str = match prototype.ret {
+        FunctionReturnType::Void => "()",
+        FunctionReturnType::Num => "f64",
+        FunctionReturnType::Str => "String"
+    };
+
+    let mut function_definition_str = function_definition!(prototype.name, function_arguments_string, return_type_str, translated_body);
+    function_definition_str.push_str("\n");
+
+    return function_definition_str;
 }
 
 fn translate_expression(expr: &Expression) -> String {

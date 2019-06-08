@@ -34,9 +34,17 @@ pub struct Function {
 }
 
 #[derive(PartialEq, Clone, Debug)]
+pub enum FunctionReturnType {
+    Void,
+    Num,
+    Str
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub struct Prototype {
     pub name: String,
-    pub args: Vec<String>
+    pub args: Vec<String>,
+    pub ret: FunctionReturnType
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -44,8 +52,8 @@ pub enum Expression {
     LiteralExpr(f64),
     VariableExpr(String),
     BinaryExpr(String, Box<Expression>, Box<Expression>),
-    ConditionalExpr{cond_expr: Box<Expression>, then_expr: Box<Expression>, else_expr: Box<Expression>},
-    LoopExpr{var_name: String, start_expr: Box<Expression>, end_expr: Box<Expression>, step_expr: Box<Expression>, body_expr: Box<Expression>},
+    ConditionalExpr{ cond_expr: Box<Expression>, then_expr: Box<Expression>, else_expr: Box<Expression> },
+    LoopExpr{ var_name: String, start_expr: Box<Expression>, end_expr: Box<Expression>, step_expr: Box<Expression>, body_expr: Box<Expression> },
     VarInitExpr(String, Box<Expression>),
     CallExpr(String, Vec<Expression>)
 }
@@ -95,7 +103,7 @@ pub fn parse(tokens: &[Token], parsed_tree: &[ASTNode], settings: &mut ParserSet
         };
         let result = match cur_token {
             Def => parse_function(&mut rest, settings),
-            Delimiter => {rest.pop(); continue},
+            Delimiter => { rest.pop(); continue },
             _ => parse_expression(&mut rest, settings)
         };
         match result {
@@ -170,10 +178,10 @@ fn parse_function(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> Par
     let prototype = parse_try!(parse_prototype, tokens, settings, parsed_tokens);
     let body = parse_try!(parse_expr, tokens, settings, parsed_tokens);
 
-    Good(FunctionNode(Function{prototype: prototype, body: body}), parsed_tokens)
+    Good(FunctionNode(Function { prototype: prototype, body: body }), parsed_tokens)
 }
 
-fn parse_prototype(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> PartParsingResult<Prototype> {
+fn parse_prototype(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Prototype> {
     let mut parsed_tokens = Vec::new();
 
     let name = expect_token!([
@@ -193,14 +201,20 @@ fn parse_prototype(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> P
         ] <= tokens, parsed_tokens, "expected ')' in prototype");
     }
 
-    Good(Prototype{name: name, args: args}, parsed_tokens)
+    let ret = expect_token!([
+        Num, Num, FunctionReturnType::Num;
+        Str, Str, FunctionReturnType::Str]
+        else { FunctionReturnType::Void }
+        <= tokens, parsed_tokens);
+
+    Good(Prototype { name: name, args: args, ret: ret }, parsed_tokens)
 }
 
 fn parse_expression(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<ASTNode> {
     let mut parsed_tokens = Vec::new();
     let expression = parse_try!(parse_expr, tokens, settings, parsed_tokens);
-    let prototype = Prototype{name: "".to_string(), args: vec![]};
-    let lambda = Function{prototype: prototype, body: expression};
+    let prototype = Prototype { name: "".to_string(), args: vec![], ret: FunctionReturnType::Void };
+    let lambda = Function { prototype: prototype, body: expression };
     Good(FunctionNode(lambda), parsed_tokens)
 }
 
@@ -226,7 +240,7 @@ fn parse_ident_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> P
 
     expect_token!(
         [OpeningParenthesis, OpeningParenthesis, ()]
-        else {return Good(VariableExpr(name), parsed_tokens)}
+        else { return Good(VariableExpr(name), parsed_tokens) }
         <= tokens, parsed_tokens);
 
     let mut args = Vec::new();
@@ -243,7 +257,7 @@ fn parse_ident_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> P
     Good(CallExpr(name, args), parsed_tokens)
 }
 
-fn parse_literal_expr(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_literal_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     let mut parsed_tokens = Vec::new();
 
     let value = expect_token!(
@@ -335,7 +349,7 @@ fn parse_conditional_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings
         parsed_tokens, "expected else");
     let else_expr = parse_try!(parse_expr, tokens, settings, parsed_tokens);
 
-    Good(ConditionalExpr{cond_expr: Box::new(cond_expr), then_expr: Box::new(then_expr), else_expr: Box::new(else_expr)}, parsed_tokens)
+    Good(ConditionalExpr{ cond_expr: Box::new(cond_expr), then_expr: Box::new(then_expr), else_expr: Box::new(else_expr) }, parsed_tokens)
 }
 
 fn parse_loop_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
@@ -363,7 +377,7 @@ fn parse_loop_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> Pa
 
     let step_expr = expect_token!(
         [Comma, Comma, parse_try!(parse_expr, tokens, settings, parsed_tokens)]
-        else {LiteralExpr(1.0)}
+        else { LiteralExpr(1.0) }
         <= tokens, parsed_tokens);
 
     expect_token!(
@@ -372,7 +386,7 @@ fn parse_loop_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> Pa
 
     let body_expr = parse_try!(parse_expr, tokens, settings, parsed_tokens);
 
-    Good(LoopExpr{var_name: var_name, start_expr: Box::new(start_expr), end_expr: Box::new(end_expr), step_expr: Box::new(step_expr), body_expr: Box::new(body_expr)}, parsed_tokens)
+    Good(LoopExpr{ var_name: var_name, start_expr: Box::new(start_expr), end_expr: Box::new(end_expr), step_expr: Box::new(step_expr), body_expr: Box::new(body_expr) }, parsed_tokens)
 }
 
 fn parse_var_init_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {

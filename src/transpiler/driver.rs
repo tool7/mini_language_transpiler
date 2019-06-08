@@ -21,17 +21,18 @@ pub enum Mode {
 #[derive(PartialEq, Clone, Debug)]
 pub struct DriverConfig {
     pub display_tokens: bool,
-    pub display_ast: bool
+    pub display_ast: bool,
+    pub build_and_run: bool
 }
 
-pub fn run(mode: Mode, display_settings: DriverConfig) -> Result<(), Error> {
+pub fn run(mode: Mode, config: DriverConfig) -> Result<(), Error> {
     match mode {
-        Mode::Interpreter => run_interpreter(display_settings),
-        Mode::Transpiler => run_transpiler(display_settings)
+        Mode::Interpreter => run_interpreter(config),
+        Mode::Transpiler => run_transpiler(config)
     }
 }
 
-fn run_interpreter(display_settings: DriverConfig) -> Result<(), Error> {
+fn run_interpreter(config: DriverConfig) -> Result<(), Error> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
     let mut input = String::new();
@@ -51,7 +52,7 @@ fn run_interpreter(display_settings: DriverConfig) -> Result<(), Error> {
         
         loop {
             let tokens = tokenize(input.as_str());
-            if display_settings.display_tokens {
+            if config.display_tokens {
                 println!("Tokens: {:?}", tokens);
             }
             prev_tokens.extend(tokens.into_iter());
@@ -77,7 +78,7 @@ fn run_interpreter(display_settings: DriverConfig) -> Result<(), Error> {
             stdin.read_line(&mut input).ok().expect("Failed to read line");
         }
 
-        if display_settings.display_ast {
+        if config.display_ast {
             println!("AST: {:?}", ast);
             continue
         }
@@ -86,7 +87,7 @@ fn run_interpreter(display_settings: DriverConfig) -> Result<(), Error> {
     Ok(())
 }
 
-fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
+fn run_transpiler(config: DriverConfig) -> Result<(), Error> {
     let source_file_path: &'static str = "source_files/test1.txt";
     let mut output_file = File::create("output/test1.rs")?;
 
@@ -104,7 +105,7 @@ fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
     }
 
     let tokens = tokenize(source_code.as_str());
-    if display_settings.display_tokens {
+    if config.display_tokens {
         println!("Tokens: {:?}", tokens);
     }
 
@@ -118,7 +119,7 @@ fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
         }
     }
 
-    if display_settings.display_ast {
+    if config.display_ast {
         println!("AST: {:?}", ast);
     }
 
@@ -132,10 +133,12 @@ fn run_transpiler(display_settings: DriverConfig) -> Result<(), Error> {
     output_file.write_all(rust_source_code.as_bytes())?;
 
     // Building and running transpiled Rust source code
-    Command::new("rustc")
-        .arg("output/test1.rs")
-        .spawn()
-        .expect("Command failed.");
+    if config.build_and_run {
+        Command::new("rustc")
+                .arg("output/test1.rs")
+                .spawn()
+                .expect("Command failed.");
+    }
 
     Ok(())
 }
