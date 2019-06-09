@@ -1,9 +1,21 @@
 use crate::transpiler::parser::*;
 
-macro_rules! function_definition {
+macro_rules! format_function_definition {
     ($name:expr, $args:expr, $return_type:expr, $body:expr) => (
         format!("fn {}({}) -> {} {{\n{}\n}}", $name, $args, $return_type, $body);
     )
+}
+
+macro_rules! format_conditional {
+    ($if_expr:expr, $then_expr:expr, $else_expr:expr) => {
+        format!("if {} {{\n\t{}\n}}\nelse {{\n\t{}\n}}", $if_expr, $then_expr, $else_expr);
+    }
+}
+
+macro_rules! format_loop {
+    () => {
+
+    }
 }
 
 pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
@@ -12,14 +24,17 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
 
     for node in ast {
         let FunctionNode(function) = node;
-        
-        // println!("{:?}", function);
 
         let mut translated_expression: String = translate_expression(&function.body);
 
         // Not function definition
         if function.prototype.name == "" {
-            translated_expression.push(';');
+            match &function.body {
+                ConditionalExpr{ cond_expr, then_expr, else_expr } => (),
+                LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => (),
+                _ => translated_expression.push(';')
+            }
+
             translated_expression.push_str("\n");
             translated_expressions.push_str(&translated_expression);
         }
@@ -35,8 +50,6 @@ pub fn translate(ast: &[ASTNode]) -> Result<String, String> {
         translated_function_definitions,
         translated_expressions
     );
-
-    // println!("{}", rust_source_code);
 
     Ok(rust_source_code)
 }
@@ -55,7 +68,7 @@ fn translate_function_definition(prototype: &Prototype, translated_body: &String
         FunctionReturnType::Str => "String"
     };
 
-    let mut function_definition_str = function_definition!(prototype.name, function_arguments_string, return_type_str, translated_body);
+    let mut function_definition_str = format_function_definition!(prototype.name, function_arguments_string, return_type_str, translated_body);
     function_definition_str.push_str("\n");
 
     return function_definition_str;
@@ -66,7 +79,7 @@ fn translate_expression(expr: &Expression) -> String {
         LiteralExpr(expr) => translate_literal_expression(expr),
         VariableExpr(expr) => translate_variable_expression(expr),
         BinaryExpr(operator, lhs, rhs) => translate_binary_expression(operator, lhs, rhs),
-        ConditionalExpr{ cond_expr, then_expr, else_expr } => translate_conditional_expression(),
+        ConditionalExpr{ cond_expr, then_expr, else_expr } => translate_conditional_expression(cond_expr, then_expr, else_expr),
         LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => translate_loop_expression(),
         VarInitExpr(name, value) => translate_var_init_expression(name, value),
         CallExpr(name, args) => translate_call_expression(name, args)
@@ -90,9 +103,12 @@ fn translate_binary_expression(operator: &String, lhs: &Expression, rhs: &Expres
     format!("({} {} {})", translated_lhs, operator, translated_rhs)
 }
 
-fn translate_conditional_expression() -> String {
-    // TODO:
-    format!("{}", "[conditional expression]")
+fn translate_conditional_expression(if_expr: &Expression, then_expr: &Expression, else_expr: &Expression) -> String {
+    let translated_if_expr = translate_expression(if_expr);
+    let translated_then_expr = translate_expression(then_expr);
+    let translated_else_expr = translate_expression(else_expr);
+
+    format_conditional!(translated_if_expr, translated_then_expr, translated_else_expr)
 }
 
 fn translate_loop_expression() -> String {
