@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::transpiler::parser::*;
 
 macro_rules! format_function_definition {
@@ -148,5 +150,8 @@ fn translate_call_expression(function_name: &String, args: &Vec<Expression>) -> 
         translated_args.push(translated_arg);
     }
 
-    format!("{}({})", function_name, translated_args.join(", "))
+    match function_name.as_str() {
+        "print" => format!("println!(\"{{}}\", {})", translated_args.join(", ")),
+        _ => format!("{}({})", function_name, translated_args.join(", "))
+    }    
 }
