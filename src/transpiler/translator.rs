@@ -7,14 +7,14 @@ macro_rules! format_function_definition {
 }
 
 macro_rules! format_conditional {
-    ($if_expr:expr, $then_expr:expr, $else_expr:expr) => {
-        format!("if {} {{\n\t{}\n}}\nelse {{\n\t{}\n}}", $if_expr, $then_expr, $else_expr);
+    ($if_expr:expr, $then_body:expr, $else_body:expr) => {
+        format!("if {} {{\n\t{}\n}}\nelse {{\n\t{}\n}}", $if_expr, $then_body, $else_body);
     }
 }
 
 macro_rules! format_loop {
-    () => {
-
+    ($var_name:expr, $start:expr, $end:expr, $step:expr, $body:expr) => {
+        format!("for {} in ({}..{}).step_by({}) {{\n\t{}\n}}", $var_name, $start, $end, $step, $body);
     }
 }
 
@@ -80,7 +80,7 @@ fn translate_expression(expr: &Expression) -> String {
         VariableExpr(expr) => translate_variable_expression(expr),
         BinaryExpr(operator, lhs, rhs) => translate_binary_expression(operator, lhs, rhs),
         ConditionalExpr{ cond_expr, then_expr, else_expr } => translate_conditional_expression(cond_expr, then_expr, else_expr),
-        LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => translate_loop_expression(),
+        LoopExpr{ var_name, start_expr, end_expr, step_expr, body_expr } => translate_loop_expression(var_name, start_expr, end_expr, step_expr, body_expr),
         VarInitExpr(name, value) => translate_var_init_expression(name, value),
         CallExpr(name, args) => translate_call_expression(name, args)
     };
@@ -111,9 +111,28 @@ fn translate_conditional_expression(if_expr: &Expression, then_expr: &Expression
     format_conditional!(translated_if_expr, translated_then_expr, translated_else_expr)
 }
 
-fn translate_loop_expression() -> String {
-    // TODO:
-    format!("{}", "[loop expression]")
+fn translate_loop_expression(var_name: &String, start_expr: &Expression, end_expr: &Expression, step_expr: &Expression, body_expr: &Expression) -> String {
+    let translated_start_expr = translate_expression(start_expr);
+    let translated_step_expr = translate_expression(step_expr);
+    let translated_body_expr = translate_expression(body_expr);
+
+    let translated_end_expr = match end_expr {
+        BinaryExpr(operator, variable_expr, literal_expr) => {
+            let var = translate_expression(variable_expr);
+            let literal = translate_expression(literal_expr);
+
+            if var != *var_name || operator != "<" {
+                panic!("Error while translating loop expression")
+            }
+
+            literal
+        },
+        _ => {
+            panic!("Error while translating loop expression")
+        }
+    };
+
+    format_loop!(var_name, translated_start_expr, translated_end_expr, translated_step_expr, translated_body_expr)
 }
 
 fn translate_var_init_expression(name: &String, value: &Expression) -> String {

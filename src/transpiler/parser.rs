@@ -181,7 +181,7 @@ fn parse_function(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> Par
     Good(FunctionNode(Function { prototype: prototype, body: body }), parsed_tokens)
 }
 
-fn parse_prototype(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Prototype> {
+fn parse_prototype(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> PartParsingResult<Prototype> {
     let mut parsed_tokens = Vec::new();
 
     let name = expect_token!([
@@ -257,7 +257,7 @@ fn parse_ident_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> P
     Good(CallExpr(name, args), parsed_tokens)
 }
 
-fn parse_literal_expr(tokens: &mut Vec<Token>, settings: &mut ParserSettings) -> PartParsingResult<Expression> {
+fn parse_literal_expr(tokens: &mut Vec<Token>, _settings: &mut ParserSettings) -> PartParsingResult<Expression> {
     let mut parsed_tokens = Vec::new();
 
     let value = expect_token!(
