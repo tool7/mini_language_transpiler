@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::transpiler::parser::*;
 
 macro_rules! format_function_definition {
