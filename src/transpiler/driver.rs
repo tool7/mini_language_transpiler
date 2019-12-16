@@ -88,8 +88,8 @@ fn run_interpreter(config: DriverConfig) -> Result<(), Error> {
 }
 
 fn run_transpiler(config: DriverConfig) -> Result<(), Error> {
-    let source_file_path: &'static str = "source_files/test1.txt";
-    let mut output_file = File::create("output/test1.rs")?;
+    let source_file_path: &'static str = "example/input.txt";
+    let mut output_file = File::create("example/output.rs")?;
 
     let input = File::open(source_file_path)?;
     let buffered = BufReader::new(input);
@@ -135,7 +135,7 @@ fn run_transpiler(config: DriverConfig) -> Result<(), Error> {
     // Building and running transpiled Rust source code
     if config.build_and_run {
         Command::new("rustc")
-                .arg("output/test1.rs")
+                .arg("example/output.rs")
                 .spawn()
                 .expect("Command failed.");
     }

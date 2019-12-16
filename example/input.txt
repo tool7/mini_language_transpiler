@@ -1,0 +1,18 @@
+def greet() num
+  10 + 20
+
+def sum(a, b) num
+  a + b
+  
+var a = 7
+sum(10, a)
+
+print(a);
+
+for i = 1, i < 10, 2.0 in
+  putchard(42);
+
+if x < 3 then
+  1
+else
+  fib(x - 1) + fib(x - 2);
