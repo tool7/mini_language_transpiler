@@ -13,3 +13,6 @@ Motivation behind the project is strictly for my personal educational purpose re
 5. Program will output a file called **output.<span></span>rs** to the same **./example** folder. The file will contain Rust code generated from simple instructions written in a *"mini language"*.
 6. If the syntax is correct, build and run **output.<span></span>rs** program using **rustc** or **cargo** commands.
 ***
+
+### Example code transpile:
+![screenshots](https://github.com/tool7/mini_language_transpiler/blob/master/images/screenshot-input-output.png?raw=true)
